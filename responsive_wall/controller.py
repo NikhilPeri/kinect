@@ -1,3 +1,5 @@
+import matplotlib.pyplot as plt
+
 from skimage.measure import block_reduce
 from skimage.transform import rescale
 
@@ -15,6 +17,8 @@ BLOCK_SIZE=(
 )
 
 CALIBRATION_PATH='responsive_wall/tmp/calibration.frame'
+
+global debug_plot
 
 def get_frame():
     try:
@@ -35,6 +39,10 @@ def transform_frame(frame):
 def display_frame(frame):
     print frame
 
+def debug_frame(frame):
+    debug_plot.set_array(frame)
+    debug_plot.figure.canvas.draw()
+
 if __name__ == '__main__':
     calibration_frame = None
     with open(CALIBRATION_PATH) as calibration_file:
@@ -42,11 +50,20 @@ if __name__ == '__main__':
 
     if calibration_frame is None:
         raise ValueError('Could not load calibration file: {}'.format(CALIBRATION_PATH))
-        return
-        
-    # while True
-    frame = get_frame()
-    frame = transform_frame(frame)
-    frame -= calibration_frame
-    frame = np.where(frame < 0, frame, 0)
-    display_frame(frame)
+
+    debug_mode = '--debug' in sys.argv
+    if debug_mode:
+        debug_plot = (
+            plt.figure()
+            .add_subplot(111)
+            .imshow(calibration_frame, cmap='hot', interpolation='nearest')
+        )
+        plt.show(block=False)
+
+    while True:
+        frame = get_frame()
+        frame = transform_frame(frame)
+        frame -= calibration_frame
+        frame = np.where(frame < 0, frame, 0)
+        if debug_mode:
+            debug_frame(frame)
